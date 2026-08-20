@@ -80,7 +80,7 @@ Notas:
 - El umbral es `<= 1` (no `< 1`), así la coordinación recibe el aviso con una franja de margen todavía disponible.
 - Al marcar la franja como `Ocupado`, `buscar_disponibilidad` deja de ofrecerla y se refuerza la protección
   contra dobles reservas que ya existía.
-- El Chat ID de coordinación es el mismo que usa el reporte semanal.
+- El Chat ID de coordinación (`8246775248`) es el mismo que ya usaba el nodo `Notificar Error`.
 
 ## Base de datos en Google Sheets
 
