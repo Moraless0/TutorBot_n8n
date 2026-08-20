@@ -1447,6 +1447,484 @@
           "name": "Telegram account"
         }
       }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo",
+          "mode": "list",
+          "cachedResultName": "TutorBot_DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "TUTORIAS",
+          "mode": "name"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        3040
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000001",
+      "name": "Nueva Tutoria Registrada",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8mXmEkvwNcdIdm7A",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo",
+          "mode": "list",
+          "cachedResultName": "TutorBot_DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "TUTORES",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "id_tutor",
+              "lookupValue": "={{ $json.id_tutor }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -112,
+        3040
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000002",
+      "name": "Leer Datos Tutor",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8mXmEkvwNcdIdm7A",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo",
+          "mode": "list",
+          "cachedResultName": "TutorBot_DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DISPONIBILIDAD",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "id_tutor",
+              "lookupValue": "={{ $('Nueva Tutoria Registrada').item.json.id_tutor }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        112,
+        3040
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000003",
+      "name": "Leer Disponibilidad Tutor",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8mXmEkvwNcdIdm7A",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Descuenta la franja usada y calcula cuantas franjas Libre le quedan al tutor.\nconst tutoria = $('Nueva Tutoria Registrada').first().json;\nconst tutor = $('Leer Datos Tutor').first().json || {};\nconst franjas = $input.all().map(i => i.json).filter(f => f.id_dispo);\n\n// dia_semana en la hoja: 1 = Lunes ... 7 = Domingo\nconst dia = ((new Date(tutoria.fecha + 'T00:00:00').getDay() + 6) % 7) + 1;\nconst hora = String(tutoria.hora || '').trim();\nconst libres = franjas.filter(f => String(f.estado).trim().toLowerCase() === 'libre');\n\n// La franja que se consumio: misma jornada y misma hora de inicio.\nconst ocupada = libres.find(f => String(f.dia_semana).trim() === String(dia)\n  && String(f.hora_inicio).trim() === hora)\n  || libres.find(f => String(f.dia_semana).trim() === String(dia));\n\nconst restantes = libres.filter(f => !ocupada || f.id_dispo !== ocupada.id_dispo);\n\nreturn [{\n  json: {\n    id_tutoria: tutoria.id_tutoria || '',\n    id_tutor: tutoria.id_tutor || '',\n    nombre_tutor: tutor.nombre || tutoria.id_tutor || 'sin nombre',\n    id_dispo: ocupada ? ocupada.id_dispo : '',\n    libres_restantes: restantes.length,\n    critico: restantes.length <= 1,\n    sin_disponibilidad: restantes.length === 0,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        3040
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000004",
+      "name": "Calcular Franjas Libres"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id_dispo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        560,
+        3040
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000005",
+      "name": "Franja Localizada?"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo",
+          "mode": "list",
+          "cachedResultName": "TutorBot_DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DISPONIBILIDAD",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_dispo"
+          ],
+          "value": {
+            "id_dispo": "={{ $json.id_dispo }}",
+            "estado": "Ocupado"
+          },
+          "schema": [
+            {
+              "id": "id_dispo",
+              "displayName": "id_dispo",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "id_tutor",
+              "displayName": "id_tutor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dia_semana",
+              "displayName": "dia_semana",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hora_inicio",
+              "displayName": "hora_inicio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hora_fin",
+              "displayName": "hora_fin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        784,
+        3040
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000006",
+      "name": "Ocupar Franja",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8mXmEkvwNcdIdm7A",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $('Calcular Franjas Libres').item.json.libres_restantes }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        3040
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000007",
+      "name": "Disponibilidad Critica?"
+    },
+    {
+      "parameters": {
+        "chatId": "8246775248",
+        "text": "=⚠️ ALERTA DE DISPONIBILIDAD: El tutor {{ $('Calcular Franjas Libres').item.json.nombre_tutor }} solo tiene {{ $('Calcular Franjas Libres').item.json.libres_restantes }} franja(s) libre(s). Favor gestionar refuerzo.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1232,
+        2960
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000008",
+      "name": "Alerta Disponibilidad Coordinacion",
+      "credentials": {
+        "telegramApi": {
+          "id": "Ww2DTyZe1pgyGReS",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $('Calcular Franjas Libres').item.json.libres_restantes }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        2960
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000009",
+      "name": "Sin Franjas Libres?"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo",
+          "mode": "list",
+          "cachedResultName": "TutorBot_DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18EVZDBYT0D9DT0J9GW7Ujv6eS9OknhWCDeXgH3dugWo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "TUTORES",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_tutor"
+          ],
+          "value": {
+            "id_tutor": "={{ $('Calcular Franjas Libres').item.json.id_tutor }}",
+            "estado": "Inactivo"
+          },
+          "schema": [
+            {
+              "id": "id_tutor",
+              "displayName": "id_tutor",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "especialidad_materias",
+              "displayName": "especialidad_materias",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "telegram_tutor",
+              "displayName": "telegram_tutor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1680,
+        2960
+      ],
+      "id": "a1f0c001-1111-4a11-8a11-aa0000000010",
+      "name": "Desactivar Tutor",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8mXmEkvwNcdIdm7A",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "pinData": {},
@@ -1793,6 +2271,108 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Nueva Tutoria Registrada": {
+      "main": [
+        [
+          {
+            "node": "Leer Datos Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Datos Tutor": {
+      "main": [
+        [
+          {
+            "node": "Leer Disponibilidad Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Disponibilidad Tutor": {
+      "main": [
+        [
+          {
+            "node": "Calcular Franjas Libres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Franjas Libres": {
+      "main": [
+        [
+          {
+            "node": "Franja Localizada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Franja Localizada?": {
+      "main": [
+        [
+          {
+            "node": "Ocupar Franja",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Ocupar Franja": {
+      "main": [
+        [
+          {
+            "node": "Disponibilidad Critica?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disponibilidad Critica?": {
+      "main": [
+        [
+          {
+            "node": "Alerta Disponibilidad Coordinacion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Alerta Disponibilidad Coordinacion": {
+      "main": [
+        [
+          {
+            "node": "Sin Franjas Libres?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sin Franjas Libres?": {
+      "main": [
+        [
+          {
+            "node": "Desactivar Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },

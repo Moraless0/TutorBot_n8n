@@ -47,6 +47,41 @@ Se agregaron nodos que leen y guardan automáticamente el paso del usuario, así
 Se configuraron los mensajes para usar `parse_mode = HTML` y se evitó que se borren guiones bajos, por ejemplo en nombres de usuario como `0_0`.
 
 
+## Update: Examen 1
+
+### Sistema de Alerta de Disponibilidad Crítica
+
+Antes de este cambio la hoja `DISPONIBILIDAD` nunca se actualizaba: el flujo solo leía las franjas `Libre`
+(`buscar_disponibilidad`) y registraba la tutoría, así que la coordinación se enteraba de que un tutor estaba
+saturado únicamente cuando un estudiante intentaba agendar y no aparecía ninguna opción. Por eso este update
+incluye tanto el descuento de la franja como la alerta.
+
+La lógica se agregó como una rama propia en el canvas, disparada por cada tutoría nueva:
+
+1. **Nueva Tutoria Registrada** (Google Sheets Trigger, `rowAdded` sobre `TUTORIAS`): se activa cuando el agente
+   registra una tutoría con estado `Asignada`.
+2. **Leer Datos Tutor**: busca en `TUTORES` el `id_tutor` de la tutoría para obtener su `nombre`.
+3. **Leer Disponibilidad Tutor**: trae todas las franjas de ese tutor en `DISPONIBILIDAD`.
+4. **Calcular Franjas Libres** (Code): calcula el `dia_semana` numérico a partir de la `fecha` de la tutoría,
+   identifica la franja consumida (mismo día y misma `hora_inicio`) y cuenta cuántas franjas `Libre` quedan
+   (`libres_restantes`).
+5. **Franja Localizada?** (IF): si no se pudo identificar la franja, no se escribe nada en la hoja.
+6. **Ocupar Franja**: aquí se descuenta la disponibilidad, cambiando el `estado` de esa franja a `Ocupado`.
+7. **Disponibilidad Critica?** (IF): valida el umbral `libres_restantes <= 1`.
+8. **Alerta Disponibilidad Coordinacion** (Telegram): si es crítico, avisa al chat de coordinación con el
+   formato `⚠️ ALERTA DE DISPONIBILIDAD: El tutor [Nombre] solo tiene [Cantidad] franja(s) libre(s). Favor
+   gestionar refuerzo.`
+9. **Sin Franjas Libres?** (IF) + **Desactivar Tutor** (opcional): si `libres_restantes = 0`, el tutor pasa a
+   `estado = Inactivo` en `TUTORES`, con lo cual `listar_tutores` deja de ofrecerlo hasta que la coordinación
+   le cargue nuevas franjas.
+
+Notas:
+
+- El umbral es `<= 1` (no `< 1`), así la coordinación recibe el aviso con una franja de margen todavía disponible.
+- Al marcar la franja como `Ocupado`, `buscar_disponibilidad` deja de ofrecerla y se refuerza la protección
+  contra dobles reservas que ya existía.
+- El Chat ID de coordinación es el mismo que usa el reporte semanal.
+
 ## Base de datos en Google Sheets
 
 Crear una hoja de cálculo con cuatro pestañas:
