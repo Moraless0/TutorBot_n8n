@@ -123,13 +123,12 @@ En n8n se deben configurar:
 - El estudiante elige una tutoría activa y la cambia a `Cancelada`.
 
 
-## Update: Examen 1
+## Examen 1
 
 ### Sistema de Alerta de Disponibilidad Crítica
 
 Se agregó una rama automática de post-asignación que descuenta la disponibilidad del tutor y alerta a la coordinación cuando quedan 1 o menos franjas libres.
 
-**Nodos nuevos en el workflow (`Ver_Final_Examen1.json`)**
 
 1. **actualizar_disponibilidad** — Marca la franja seleccionada como `Ocupado` en la hoja `DISPONIBILIDAD` justo después de `registrar_tutoria`.
 2. **contar_franjas_libres** — Consulta las franjas `Libre` restantes del mismo tutor.
@@ -139,13 +138,6 @@ Se agregó una rama automática de post-asignación que descuenta la disponibili
 6. **IF Desactivar Tutor** — Verifica si la cantidad de franjas libres es exactamente `0`.
 7. **desactivar_tutor** — Cambia el estado del tutor a `Inactivo` en la hoja `TUTORES`.
 
-**Lógica del flujo**
-
-- Tras una asignación exitosa, el agente llama a `actualizar_disponibilidad` con `id_dispo` e `id_tutor`.
-- Luego llama a `contar_franjas_libres` con el mismo `id_tutor` y cuenta cuántas filas `Libre` quedan.
-- Si el resultado es `<= 1`, el agente ejecuta `alertar_coordinacion` con: `⚠️ ALERTA DE DISPONIBILIDAD: El tutor [Nombre] solo tiene [Cantidad] franja(s) libre(s). Favor gestionar refuerzo.`
-- Si el resultado es `0`, el agente ejecuta `desactivar_tutor` y cambia el estado del tutor a `Inactivo`.
-- Los nodos `IF Disponibilidad Crítica` e `IF Desactivar Tutor` quedan en el canvas como evidencia visual de la validación de umbral solicitada en el examen.
 
 **Ajustes necesarios antes de probar**
 
